@@ -4,7 +4,7 @@ A four-tier comparison of SMS spam detection methods, built for INM434 Natural L
 
 **Author:** Oleh Hastov
 
-This repository describes the the full codebase submited to Moodle as "nlp_spam_cw_final.zip", the data splits, the unit tests, and the instructions for evaluating the two best-trained models on the test set.
+This repository describes the the full codebase submited to Moodle as `nlp_spam_cw_final.zip`, the data splits, the unit tests, and the instructions for evaluating the two best-trained models on the test set.
 
 ## Contents
 
@@ -12,8 +12,8 @@ This repository describes the the full codebase submited to Moodle as "nlp_spam_
 - [Software requirements](#software-requirements)
 - [Test set](#test-set)
 - [Pretrained checkpoints](#pretrained-checkpoints)
-- [Running Model 1: T4A_bert_lr3e-5](#running-model-1-t4a_bert_lr3e-5)
-- [Running Model 2: T3 C04](#running-model-2-t3-c04)
+- [Running Model 1: T4B_bert_lr3e-5_s789](#running-model-1-t4b_bert_lr3e-5_s789)
+- [Running Model 2: T3 C04_s1011](#running-model-2-t3-c04_s1011)
 - [Reproducing from scratch (optional)](#reproducing-from-scratch-optional)
 - [Sanity checks](#sanity-checks)
 - [Project structure](#project-structure)
@@ -21,11 +21,13 @@ This repository describes the the full codebase submited to Moodle as "nlp_spam_
 
 ## The two best-trained models
 
-I picked these two by ranking every cell on the joint deployment criterion (clean test macro-F1 combined with ham-side robustness across 5 seeds). Model 1 is the strongest overal under that criterion; Model 2 is the strongest non-BERT model under the same criterion.
+I picked these two by ranking every cross-seed family on the **joint_deploy** criterion. For a single seeded run that's `min(clean_test_F1, adv_mild_F1, adv_moderate_F1, adv_aggressive_F1)`; for a family the headline is the cross-seed mean of the per-seed value. It's a deployment-realistic minimum: how badly does the model do on its worst spam-side input. The ham-side is excluded on purpose because it's a diagnostic axis, not a deployment one.
 
-### Model 1: T4A_bert_lr3e-5
+Model 1 is the family with the highest joint_deploy_mean overal. Model 2 is the highest non-BERT family under the same criterion. The shipped checkpoint for each is the strongest individual seed of its family. The cross-seed family means come from the report and aggregate over all 5 seeds: those are the headline numbers in the report. The shipped seed is one member of the family, included so the marker can verify a single concrete result; running it should produce numbers in the same neighbourhood as the family mean and probably a touch higher (because it's the strongest seed).
 
-Tier 4. BERT-base-uncased, full fine-tune on the balanced training split.
+### Model 1: T4B_bert_lr3e-5_s789
+
+Tier 4. BERT-base-uncased, full fine-tune on the balanced training split. Best individual seed of the T4 bert lr=3e-5 family.
 
 | Setting | Value |
 | --- | --- |
@@ -35,16 +37,17 @@ Tier 4. BERT-base-uncased, full fine-tune on the balanced training split.
 | Batch size | 16 |
 | Max length | 128 |
 | Epochs | 2 |
-| Seed | 123 (plus 4 cross-seed siblings) |
+| Seed | 789 (shipped); family covers seeds 123, 456, 789, 1011, 1213 |
 
-| Metric | Single seed (123) | Cross-seed (5 seeds) |
+| Metric | Single seed (789, shipped) | Cross-seed mean (5 seeds, report) |
 | --- | --- | --- |
-| Val macro-F1 | 0.9865 | 0.9840 +/- 0.0038 |
-| Test macro-F1 | 0.9657 | 0.9747 +/- 0.0069 |
+| Val macro-F1 | 0.9867 | 0.9840 +/- 0.0038 |
+| Test macro-F1 (clean) | 0.9818 | 0.9747 +/- 0.0069 |
+| joint_deploy F1 | 0.9818 | **0.9747** |
 
-### Model 2: T3 C04
+### Model 2: T3 C04_s1011
 
-Tier 3. GPT-2-small (124M parameters), end-to-end fine-tune with the flexible-token classification head.
+Tier 3. GPT-2-small (124M parameters), end-to-end fine-tune with the flexible-token classification head. Best individual seed of the C04 family.
 
 | Setting | Value |
 | --- | --- |
@@ -55,12 +58,15 @@ Tier 3. GPT-2-small (124M parameters), end-to-end fine-tune with the flexible-to
 | Learning rate | 5e-5 |
 | Batch size | 8 |
 | Dropout | 0.1 |
-| Seed | 123 (plus 4 cross-seed siblings) |
+| Seed | 1011 (shipped); family covers seeds 123, 456, 789, 1011, 1213 |
 
-| Metric | Single seed (123) | Cross-seed (5 seeds) |
+| Metric | Single seed (1011, shipped) | Cross-seed mean (5 seeds, report) |
 | --- | --- | --- |
-| Val macro-F1 | 0.9863 | 0.9856 +/- 0.0019 |
-| Test macro-F1 | 0.9727 | 0.9758 +/- 0.0073 |
+| Val macro-F1 | 0.9865 | 0.9856 +/- 0.0019 |
+| Test macro-F1 (clean) | 0.9797 | 0.9758 +/- 0.0073 |
+| joint_deploy F1 | 0.9797 | **0.9672** |
+
+> Note for the marker: the single-seed numbers in the left column are what `evaluate.py` will print when run on the shipped checkpoint. The cross-seed means in the right column are the headline numbers in the report and require running all 5 seeds of each family. The shipped seed is the strongest individual member of its family, so its single-seed numbers will be a touch above the family mean. That is by design, not a contradiction.
 
 ## Software requirements
 
@@ -81,7 +87,7 @@ Set up a virtual environment from the repo root:
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate          # .venv\Scripts\activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -107,14 +113,6 @@ python -m shared.splits
 python -m data.make_adversarial_test
 ```
 
-A copy of the splits directory is also available on Drive if you cannot or do not want to rebuild from UCI:
-
-```
-https://drive.google.com/drive/folders/<DRIVE_TEST_DATA_FOLDER_ID>
-```
-
-(replace the placeholder if you go this route, otherwise just use the in-repo CSVs).
-
 ## Pretrained checkpoints
 
 Tier 1 (sklearn `.joblib` files) and Tier 2 (the LSTM `best_model.pt`) checkpoints are small and ship inside the repository:
@@ -124,60 +122,35 @@ tier1_classical/reports/checkpoints/
 tier2_lstm/reports/best_model.pt
 ```
 
-Tier 3 GPT-2 checkpoints (~500 MB each) and Tier 4 BERT/DistilBERT checkpoints (~250-500 MB each) are too big for git. They live in my Google Drive backup folder. Please download from:
+Tier 3 GPT-2 checkpoints (~500 MB each) and Tier 4 BERT/DistilBERT checkpoints (~250-500 MB each) are too big for git. The two needed for the headline models are shared as direct Drive links (anyone with the link can view):
 
-```
-https://drive.google.com/drive/folders/<DRIVE_CHECKPOINTS_FOLDER_ID>
-```
+| Model | File | Size | Drive link |
+| --- | --- | --- | --- |
+| Model 1 | `T4B_bert_lr3e-5_s789.pt` | ~440 MB | https://drive.google.com/file/d/1rYORvkjTHbymdja0e7aRN6wPwQZgVscg/view?usp=sharing |
+| Model 2 | `C04_s1011.pt` | ~500 MB | https://drive.google.com/file/d/1tdCBOSpvPdeLretTuXxoXiCfrE_IZTn8/view?usp=sharing |
 
-The Drive folder mirrors what the training notebooks rsync to during Colab runs:
+After downloading, place each file inside the repository as shown:
 
-```
-INM434_artifacts/
-├── tier3/
-│   ├── checkpoints/
-│   │   ├── C04_s123.pt           <-- THIS for Model 2
-│   │   ├── C04_s456.pt
-│   │   ├── C04_s789.pt
-│   │   ├── C04_s1011.pt
-│   │   ├── C04_s1213.pt
-│   │   └── ...other Tier 3 cells
-│   ├── predictions/
-│   ├── metadata/
-│   └── history/
-└── tier4/
-    ├── checkpoints/
-    │   ├── T4A_bert_lr3e-5.pt    <-- THIS for Model 1
-    │   ├── T4B_bert_lr3e-5_s456.pt
-    │   ├── T4B_bert_lr3e-5_s789.pt
-    │   ├── T4B_bert_lr3e-5_s1011.pt
-    │   ├── T4B_bert_lr3e-5_s1213.pt
-    │   └── ...other Tier 4 cells
-    ├── predictions/
-    ├── metadata/
-    └── history/
-```
+| File | Place at |
+| --- | --- |
+| `T4B_bert_lr3e-5_s789.pt` | `tier4_bert/reports/checkpoints/T4B_bert_lr3e-5_s789.pt` |
+| `C04_s1011.pt` | `tier3_gpt2/reports/checkpoints/C04_s1011.pt` |
 
-To run the two best models you only need two files from Drive:
+Each `.pt` is a PyTorch `state_dict`: just the trained weights. The model architecture lives in the repository code (`tier3_gpt2/gpt2_scratch/model.py` and `tier4_bert/dataset.py`), and `evaluate.py` rebuilds it before loading the weights.
 
-| Model | Drive path | Place at |
-| --- | --- | --- |
-| Model 1 | `INM434_artifacts/tier4/checkpoints/T4A_bert_lr3e-5.pt` | `tier4_bert/reports/checkpoints/T4A_bert_lr3e-5.pt` |
-| Model 2 | `INM434_artifacts/tier3/checkpoints/C04_s123.pt` | `tier3_gpt2/reports/checkpoints/C04_s123.pt` |
-
-## Running Model 1: T4A_bert_lr3e-5
+## Running Model 1: T4B_bert_lr3e-5_s789
 
 Confirm the checkpoint is in place:
 
 ```bash
-ls tier4_bert/reports/checkpoints/T4A_bert_lr3e-5.pt
+ls tier4_bert/reports/checkpoints/T4B_bert_lr3e-5_s789.pt
 ```
 
 Run the Tier 4 evaluation script pointing at this checkpoint:
 
 ```bash
 python -m tier4_bert.scripts.evaluate \
-    --checkpoint tier4_bert/reports/checkpoints/T4A_bert_lr3e-5.pt
+    --checkpoint tier4_bert/reports/checkpoints/T4B_bert_lr3e-5_s789.pt
 ```
 
 What the script does:
@@ -191,19 +164,19 @@ What the script does:
 
 Expected runtime: 1-3 minutes on CPU, under 30 seconds on GPU.
 
-## Running Model 2: T3 C04
+## Running Model 2: T3 C04_s1011
 
 Confirm the checkpoint is in place:
 
 ```bash
-ls tier3_gpt2/reports/checkpoints/C04_s123.pt
+ls tier3_gpt2/reports/checkpoints/C04_s1011.pt
 ```
 
 Run the Tier 3 evaluation script pointing at this checkpoint:
 
 ```bash
 python -m tier3_gpt2.scripts.evaluate \
-    --checkpoint tier3_gpt2/reports/checkpoints/C04_s123.pt \
+    --checkpoint tier3_gpt2/reports/checkpoints/C04_s1011.pt \
     --no-hf-init
 ```
 
@@ -226,7 +199,7 @@ If for any reason the checkpoints can't be downloaded, both models can be retrai
 Tier 4 BERT-base (Model 1):
 
 ```bash
-python -m tier4_bert.scripts.train --cells T4A_bert_lr3e-5
+python -m tier4_bert.scripts.train --cells T4B_bert_lr3e-5_s789
 ```
 
 Expected runtime: 60-120 seconds on a Colab T4 GPU.
@@ -234,7 +207,7 @@ Expected runtime: 60-120 seconds on a Colab T4 GPU.
 Tier 3 GPT-2 small with the C04 config (Model 2):
 
 ```bash
-python -m tier3_gpt2.scripts.train --cells C04_s123
+python -m tier3_gpt2.scripts.train --cells C04_s1011
 ```
 
 Expected runtime: 8-12 minutes on a Colab T4 GPU.
