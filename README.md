@@ -6,6 +6,10 @@ A four-tier comparison of SMS spam detection methods, built for INM434 Natural L
 
 This repository describes the the full codebase submited to Moodle as `nlp_spam_cw_final.zip`, the data splits, the unit tests, and the instructions for evaluating the two best-trained models on the test set.
 
+<p align="center">
+  <img src="Diagram.png" alt="Report preview" width="400">
+</p>
+
 ## Contents
 
 - [The two best-trained models](#the-two-best-trained-models)
