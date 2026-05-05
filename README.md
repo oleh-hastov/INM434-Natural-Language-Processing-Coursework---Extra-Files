@@ -133,6 +133,13 @@ Tier 3 GPT-2 checkpoints (~500 MB each) and Tier 4 BERT/DistilBERT checkpoints (
 | Model 1 | `T4B_bert_lr3e-5_s789.pt` | ~440 MB | https://drive.google.com/file/d/1rYORvkjTHbymdja0e7aRN6wPwQZgVscg/view?usp=sharing |
 | Model 2 | `C04_s1011.pt` | ~500 MB | https://drive.google.com/file/d/1tdCBOSpvPdeLretTuXxoXiCfrE_IZTn8/view?usp=sharing |
 
+
+Alternatively you can download the checkpoints from the university OneDrive:
+
+https://cityuni-my.sharepoint.com/:u:/g/personal/oleh_hastov_city_ac_uk/IQCR9dBHNZ-CQZVYETE3yc_sAUZmOJG9RYN71kRu26_ROSE?e=PECf9L
+
+https://cityuni-my.sharepoint.com/:u:/g/personal/oleh_hastov_city_ac_uk/IQCcMEaFxjn9QZzettsGk335Af3MWf8y3_PLJyb3_9xK5PM?e=tsY9St
+
 After downloading, place each file inside the repository as shown:
 
 | File | Place at |
